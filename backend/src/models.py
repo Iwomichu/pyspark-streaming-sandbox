@@ -1,7 +1,10 @@
 import os
+from datetime import datetime
+from typing import Optional, List
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import sessionmaker, declarative_base, relationship
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlmodel import SQLModel, Field, Relationship
 
 POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "password")
@@ -12,22 +15,24 @@ session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    age = Column(Integer)
-
-    posts = relationship("Post", back_populates="poster")
+class UserBase(SQLModel):
+    email: str
+    age: int
 
 
-class Post(Base):
-    __tablename__ = "posts"
+class User(UserBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
 
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime)
-    body = Column(String)
-    poster_id = Column(Integer, ForeignKey("users.id"))
+    posts: List["Post"] = Relationship(back_populates="poster")
 
-    poster = relationship("User", back_populates="posts")
+
+class PostBase(SQLModel):
+    body: str
+
+
+class Post(PostBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    timestamp: datetime = Field(default_factory=datetime.now)
+    poster_id: int = Field(foreign_key="user.id")
+
+    poster: User = Relationship(back_populates="posts")
