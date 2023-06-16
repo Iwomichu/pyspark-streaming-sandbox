@@ -1,4 +1,4 @@
-version: "3"
+version: "3.4"
 services:
   spark-notebook:
     image: jupyter/pyspark-notebook:python-3.8
@@ -25,7 +25,36 @@ services:
       - "kafka_data:/bitnami"
     environment:
       - ALLOW_PLAINTEXT_LISTENER=yes
-
+  backend:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    environment:
+      - KAFKA_HOSTNAME=kafka
+      - KAFKA_PORT=9092
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DATABASE=postgres
+    restart: on-failure
+    ports:
+      - "8000:8000"
+    depends_on:
+    - kafka
+    - postgres
+    healthcheck:
+      start_period: 10s
+  monitor:
+    build:
+      context: monitor
+      dockerfile: Dockerfile
+      args:
+        - environment=compose
+    restart: on-failure
+    links:
+      - kafka
+    depends_on:
+      - backend
 volumes:
   pgdata: {}
   kafka_data:

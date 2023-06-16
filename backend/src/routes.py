@@ -1,11 +1,19 @@
+import os
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, Depends, HTTPException, Query
+from kafka import KafkaProducer
 from sqlmodel import SQLModel, Session, select
 
 from . import models
 
+
+POSTS_TOPIC = "posts"
+KAFKA_HOSTNAME = os.environ.get("KAFKA_HOSTNAME", "kafka")
+KAFKA_PORT = os.environ.get("KAFKA_PORT", "9092")
+
 app = FastAPI()
+kafka_producer = KafkaProducer(bootstrap_servers=f"{KAFKA_HOSTNAME}:{KAFKA_PORT}")
 
 
 def get_session():
@@ -52,6 +60,7 @@ def create_post_for_user(
     session.add(post_db)
     session.commit()
     session.refresh(post_db)
+    kafka_producer.send(topic=POSTS_TOPIC, value=bytes(post_db.json(), "utf-8"))
     return post_db
 
 
