@@ -7,6 +7,7 @@ services:
       - "4040:4040"
     volumes:
       - ./notebooks:/home/jovyan/notebooks
+      - ./results:/home/jovyan/results
   postgres:
     image: postgres:11
     ports:
