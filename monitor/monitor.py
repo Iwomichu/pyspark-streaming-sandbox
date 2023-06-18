@@ -9,6 +9,8 @@ from pydantic import BaseModel
 
 sleep(10)
 logger = getLogger("Demo Kafka app")
+posts_logger = getLogger("POST")
+trends_logger = getLogger("TRENDS")
 logging.basicConfig(level=logging.INFO)
 
 
@@ -17,6 +19,15 @@ class Post(BaseModel):
     id: int
     timestamp: datetime
     poster_id: int
+
+
+class TrendItem(BaseModel):
+    word: str
+    count: int
+
+
+class Trend(BaseModel):
+    items: TrendItem
 
 
 kafka_brokers = {
@@ -40,4 +51,9 @@ kafka_app = FastKafka(
 
 @kafka_app.consumes(topic="posts")
 async def on_post(msg: Post):
-    logger.info(msg)
+    posts_logger.info(msg)
+
+
+@kafka_app.consumes(topic="TRENDS")
+async def on_trend(msg: Trend):
+    trends_logger.info(msg)
